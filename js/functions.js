@@ -16,8 +16,10 @@ const isPalindrome = (string = '') => {
   return normalizedString === [...normalizedString].reverse().join('');
 };
 
+isPalindrome();
+
 // или
-const isPalindrome = (string = '') => {
+const isPalindrome1 = (string = '') => {
 
   string = string.replaceAll(' ', '').toLowerCase();
 
@@ -30,7 +32,7 @@ const isPalindrome = (string = '') => {
   return string === revers;
 };
 
-isPalindrome();
+isPalindrome1();
 
 /**
  * Принимает строку и извлекает содержащиеся в ней цифры
@@ -39,11 +41,13 @@ isPalindrome();
  */
 const extractNumbers = (string = '') => Math.abs(parseInt(string.replace(/\D+/g, ''), 10));
 
-// или
-function stringToNumber(str) {
-  return Number(
-    [...str].filter((item) => !isNaN(parseInt(item, 10))).join('') || NaN
-  );
-}
+extractNumbers();
 
-stringToNumber();
+// или
+// function stringToNumber(str) {
+//   return Number(
+//     [...str].filter((item) => !isNaN(parseInt(item, 10))).join('') || NaN
+//   );
+// }
+
+// stringToNumber();
