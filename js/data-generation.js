@@ -1,4 +1,4 @@
-import { getRandomInteger, getRandomArrayElement, } from './util.js';
+import { getRandomInteger, getRandomArrayElement, } from './utils/random.js';
 import { getDataArray, } from './data.js';
 
 // Константы для настройки генерации
