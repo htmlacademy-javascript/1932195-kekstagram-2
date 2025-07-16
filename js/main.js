@@ -1,3 +1,4 @@
 import { photos } from './data-generation.js';
+import { renderThumbnails } from './thumbnails.js';
 
-console.log(photos);
+renderThumbnails(photos);
