@@ -9,7 +9,7 @@ const createThumbnail = (photo) => {
 /** @type {HTMLAnchorElement} */
   const thumbnail = template.cloneNode(true);
   thumbnail.href = photo.url;
-  thumbnail.dataset.id = photo.id;
+  thumbnail.dataset.pictureId = photo.id;
 
   const image = thumbnail.querySelector('.picture__img');
 
@@ -22,6 +22,7 @@ const createThumbnail = (photo) => {
   return thumbnail;
 };
 
-export const renderThumbnails = (photos) => container.append(...photos.map(createThumbnail));
+renderPack(photos, createThumbnail, container);
 
-// renderPack(photos, createThumbnail, container);
+export { container };
+
