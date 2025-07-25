@@ -1,20 +1,18 @@
-import { photos, } from './data-generation.js';
-import { renderPack, } from './utils/dom.js';
+import { photos } from './data-generation.js';
+import { initComments, clearComments } from './render-comments.js';
 
 const bigPictureNode = document.querySelector('.big-picture');
 const bigPictureImgNode = bigPictureNode.querySelector('.big-picture__img img');
 const likesCountNode = bigPictureNode.querySelector('.likes-count');
-const socialCommentsNode = bigPictureNode.querySelector('.social__comments');
-const socialCommentsTemplate = socialCommentsNode.querySelector('.social__comment');
 const commentsCaptionNode = bigPictureNode.querySelector('.social__caption');
-const commentsCountNode = bigPictureNode.querySelector('.social__comment-count');
-const commentsLoaderNode = bigPictureNode.querySelector('.social__comments-loader');
 const bigPictureCancelNode = bigPictureNode.querySelector('.big-picture__cancel');
 
+// Обработчики закрытия модального окна
 const onBigPictureCancelClick = (evt) => {
   evt.preventDefault();
   closeBigPicture();
 };
+
 const onEscKeydown = (evt) => {
   if (evt.key === 'Escape') {
     evt.preventDefault();
@@ -22,75 +20,53 @@ const onEscKeydown = (evt) => {
   }
 };
 
-const closeBigPicture = () => {
-  bigPictureNode.classList.add('hidden');
-  bigPictureCancelNode.removeEventListener('click', onBigPictureCancelClick);
-  document.removeEventListener ('keydown', onEscKeydown);
-};
-
-// const openBigPicture = (pictureId) => {
-//   const currentPhoto = photos.find((photo) => photo.id === Number(pictureId));
-//   const socialCommentsFragment = document.createDocumentFragment();
-
-//   bigPictureImgNode.src = currentPhoto.url;
-//   likesCountNode.textContent = currentPhoto.likes;
-//   socialCommentsNode.innerHTML = '';
-
-//   currentPhoto.comments.forEach ((comment) => {
-//     const socialCommentNode = socialCommentsTemplate.cloneNode(true);
-
-//     socialCommentNode.querySelector('.social__picture').src = comment.avatar;
-//     socialCommentNode.querySelector('.social__picture').alt = comment.name;
-//     socialCommentNode.querySelector('.social__text').textContent = comment.message;
-
-//     socialCommentsFragment.appendChild(socialCommentNode);
-//   });
-
-//   socialCommentsNode.appendChild(socialCommentsFragment);
-//   commentsCaptionNode.textContent = currentPhoto.description;
-//   commentsCountNode.classList.add('hidden');
-//   commentsLoaderNode.classList.add('hidden');
-
-//   bigPictureNode.classList.remove('hidden');
-//   bigPictureCancelNode.addEventListener('click', onBigPictureCancelClick);
-//   document.body.classList.add('modal-open');
-//   document.addEventListener('keydown', onEscKeydown);
+// const onOutsideClick = (evt) => {
+//   if (evt.target === bigPictureNode) {
+//     closeBigPicture();
+//   }
 // };
 
+// Функция закрытия модального окна
+const closeBigPicture = () => {
+  bigPictureNode.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+
+  // Удаляем все обработчики
+  bigPictureCancelNode.removeEventListener('click', onBigPictureCancelClick);
+  document.removeEventListener('keydown', onEscKeydown);
+  // bigPictureNode.removeEventListener('click', onOutsideClick);
+
+  // Очищаем комментарии
+  clearComments();
+};
+
+// Функция открытия модального окна
 const openBigPicture = (pictureId) => {
+  // Находим фото по ID
   const currentPhoto = photos.find((photo) => photo.id === Number(pictureId));
 
-  // Функция создания одного комментария для renderPack
-  const createComment = (comment) => {
-    const socialCommentNode = socialCommentsTemplate.cloneNode(true);
+  // if (!currentPhoto) {
+  //   console.error(`Photo with ID ${pictureId} not found`);
+  //   return;
+  // }
 
-    socialCommentNode.querySelector('.social__picture').src = comment.avatar;
-    socialCommentNode.querySelector('.social__picture').alt = comment.name;
-    socialCommentNode.querySelector('.social__text').textContent = comment.message;
-
-    return socialCommentNode;
-  };
-
+  // Заполняем данные фото
   bigPictureImgNode.src = currentPhoto.url;
   bigPictureImgNode.alt = currentPhoto.description;
   likesCountNode.textContent = currentPhoto.likes;
-  socialCommentsNode.innerHTML = '';
-
-  // Используем renderPack вместо ручного создания фрагмента
-  renderPack(
-    currentPhoto.comments, // массив комментариев
-    createComment, // функция создания элемента
-    socialCommentsNode // контейнер для комментариев
-  );
-
   commentsCaptionNode.textContent = currentPhoto.description;
-  commentsCountNode.classList.add('hidden');
-  commentsLoaderNode.classList.add('hidden');
 
+  // Инициализируем комментарии с порционной загрузкой
+  initComments(currentPhoto.comments);
+
+  // Показываем модальное окно
   bigPictureNode.classList.remove('hidden');
-  bigPictureCancelNode.addEventListener('click', onBigPictureCancelClick);
   document.body.classList.add('modal-open');
+
+  // Добавляем обработчики
+  bigPictureCancelNode.addEventListener('click', onBigPictureCancelClick);
   document.addEventListener('keydown', onEscKeydown);
+  // bigPictureNode.addEventListener('click', onOutsideClick);
 };
 
 export { openBigPicture };
