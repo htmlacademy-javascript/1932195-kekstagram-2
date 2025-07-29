@@ -1,5 +1,6 @@
 import { photos } from './data-generation.js';
 import { initComments, clearComments } from './render-comments.js';
+import { isEscapeKey } from './utils/escape.js';
 
 const bigPictureNode = document.querySelector('.big-picture');
 const bigPictureImgNode = bigPictureNode.querySelector('.big-picture__img img');
@@ -14,7 +15,8 @@ const onBigPictureCancelClick = (evt) => {
 };
 
 const onEscKeydown = (evt) => {
-  if (evt.key === 'Escape') {
+  // if (evt.key === 'Escape') {
+  if (isEscapeKey(evt)) {
     evt.preventDefault();
     closeBigPicture();
   }
