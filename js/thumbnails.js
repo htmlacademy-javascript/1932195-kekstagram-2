@@ -1,18 +1,16 @@
-import { photos } from './data-generation.js';
-import { findTemplate, renderPack, } from './utils/dom.js';
+import { findTemplate, renderPack } from './utils/dom.js';
+import { setPhotos } from './render-photo.js';
+import { loadPhotos } from './api.js';
 
-/** @type {HTMLAnchorElement} */
 const template = findTemplate('picture');
 const container = document.querySelector('.pictures');
 
 const createThumbnail = (photo) => {
-/** @type {HTMLAnchorElement} */
   const thumbnail = template.cloneNode(true);
-  thumbnail.href = photo.url;
+  thumbnail.href = `#${photo.id}`;
   thumbnail.dataset.pictureId = photo.id;
 
   const image = thumbnail.querySelector('.picture__img');
-
   image.src = photo.url;
   image.alt = photo.description;
 
@@ -22,7 +20,17 @@ const createThumbnail = (photo) => {
   return thumbnail;
 };
 
-renderPack(photos, createThumbnail, container);
+const initThumbnails = async () => {
+  try {
+    const photos = await loadPhotos();
+    setPhotos(photos);
+    renderPack(photos, createThumbnail, container);
+    return photos;
+  } catch (error) {
+    console.error(error.message);
+    // Можно добавить fallback на моковые данные
+    throw error;
+  }
+};
 
-export { container };
-
+export { container, initThumbnails };
