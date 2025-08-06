@@ -2,8 +2,10 @@ import { isEscapeKey } from './utils/escape.js';
 import { initEffectsSlider, resetEffects } from './effects-slider.js';
 import { isHashtagsValid } from './check-hashtag-validity.js';
 import { uploadPhoto } from './api.js';
+import { showTostError } from './utils/error.js';
 
 const SCALE_STEP = 0.25;
+const FILE_TYPES = ['jpg', 'jpeg', 'png', 'webp',];
 const uploadForm = document.querySelector('.img-upload__form');
 const pageBody = document.querySelector('body');
 const uploadFileControl = uploadForm.querySelector('#upload-file');
@@ -85,6 +87,17 @@ const resetForm = () => {
   scale = 1;
   scaleControl.value = '100%';
   img.style.transform = 'scale(1)';
+
+  // Сбрасываем изображение предпросмотра
+  const previewImg = uploadForm.querySelector('.img-upload__preview img');
+  previewImg.src = 'img/upload-default-image.jpg';
+
+  // Сбрасываем миниатюры эффектов
+  const effectsPreviews = uploadForm.querySelectorAll('.effects__preview');
+  effectsPreviews.forEach((preview) => {
+    preview.style.backgroundImage = '';
+  });
+
   resetEffects();
   uploadFileControl.value = '';
 };
@@ -154,14 +167,49 @@ const onFormSubmit = (evt) => {
   }
 };
 
-// Инициализация
 export const initUploadModal = () => {
   uploadFileControl.addEventListener('change', () => {
-    photoEditorForm.classList.remove('hidden');
-    pageBody.classList.add('modal-open');
-    photoEditorResetBtn.addEventListener('click', onPhotoEditorResetBtnClick);
-    document.addEventListener('keydown', onDocumentKeydown);
-    initEffectsSlider();
+    const file = uploadFileControl.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    // Проверяем тип файла по расширению
+    const fileName = file.name.toLowerCase();
+    const fileExt = fileName.split('.').pop();
+    const matches = FILE_TYPES.includes(fileExt);
+
+    if (!matches) {
+      showTostError('Неверный тип файла');
+      return;
+    }
+
+    const previewImg = uploadForm.querySelector('.img-upload__preview img');
+    const effectsPreviews = uploadForm.querySelectorAll('.effects__preview');
+
+    const reader = new FileReader();
+
+    reader.addEventListener('load', () => {
+      // Устанавливаем загруженное изображение в src основного превью
+      previewImg.src = reader.result;
+
+      // Устанавливаем изображение для всех миниатюр эффектов
+      effectsPreviews.forEach((preview) => {
+        preview.style.backgroundImage = `url(${reader.result})`;
+      });
+
+      // Показываем форму редактирования
+      photoEditorForm.classList.remove('hidden');
+      pageBody.classList.add('modal-open');
+
+      // Инициализируем остальные компоненты
+      photoEditorResetBtn.addEventListener('click', onPhotoEditorResetBtnClick);
+      document.addEventListener('keydown', onDocumentKeydown);
+      initEffectsSlider();
+    });
+
+    reader.readAsDataURL(file);
   });
 
   smaller.addEventListener('click', onSmallerClick);

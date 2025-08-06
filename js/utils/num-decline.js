@@ -25,13 +25,3 @@ export const numDecline = (num, nominative, genitiveSingular, genitivePlural) =>
   // Во всех остальных случаях - множественное число
   return genitivePlural;
 };
-
-// export function numDecline(number, one, few, many) {
-//   if (number % 10 === 1 && number % 100 !== 11) {
-//     return one;
-//   }
-//   if ([2, 3, 4].includes(number % 10) && ![12, 13, 14].includes(number % 100)) {
-//     return few;
-//   }
-//   return many;
-// }
