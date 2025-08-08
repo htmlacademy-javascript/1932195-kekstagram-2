@@ -1,7 +1,7 @@
 import { renderThumbnails } from './thumbnails';
 import { debounce } from './utils/debounce';
 
-const SORTFUNC = {
+const SORT_FUNCTIONS = {
   random: () => 0.5 - Math.random(),
   discussed: (a, b) => b.comments.length - a.comments.length,
 };
@@ -40,12 +40,12 @@ function applyFilter() {
   switch (currentFilter) {
     case 'filter-random':
       filteredPictures = [...pictures]
-        .sort(SORTFUNC.random)
+        .sort(SORT_FUNCTIONS.random)
         .slice(0, MAX_PICTURE_COUNT);
       break;
     case 'filter-discussed':
       filteredPictures = [...pictures]
-        .sort(SORTFUNC.discussed);
+        .sort(SORT_FUNCTIONS.discussed);
       break;
   }
 

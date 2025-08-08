@@ -3,7 +3,7 @@ import { openBigPicture } from './render-photo.js';
 import { initUploadModal } from './upload-photo-form.js';
 import { configFilter } from './filter.js';
 import { showDataError } from './utils/error.js';
-
+import { initEffectRadios } from './effects-slider.js';
 
 const initApp = () => {
   // Инициализация формы загрузки (в своём контейнере)
@@ -22,6 +22,9 @@ const initApp = () => {
       });
     })
     .catch(showDataError);
+
+  initEffectRadios();
 };
 
 document.addEventListener('DOMContentLoaded', initApp);
+

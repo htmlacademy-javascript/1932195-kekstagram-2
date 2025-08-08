@@ -1,22 +1,29 @@
-const showTostError = (errMessage) => {
+const showToastError = (errMessage) => {
   const dataErrorTemplate = document.querySelector('#data-error');
+
+  if (!dataErrorTemplate) {
+    return;
+  }
+
   const dataErrorElement = dataErrorTemplate.content.cloneNode(true);
   const errorElement = dataErrorElement.querySelector('.data-error');
 
   if (errMessage) {
-    dataErrorElement.querySelector('.data-error__title').textContent = errMessage;
+    const titleElement = dataErrorElement.querySelector('.data-error__title');
+    if (titleElement) {
+      titleElement.textContent = errMessage;
+    }
   }
 
   document.body.appendChild(dataErrorElement);
 
   setTimeout(() => {
-    errorElement.remove();
+    errorElement?.remove();
   }, 5000);
 };
 
-const showDataError = () => {
-  showTostError();
+const showDataError = (message = 'Произошла ошибка') => {
+  showToastError(message);
 };
 
-
-export { showDataError, showTostError };
+export { showDataError, showToastError };

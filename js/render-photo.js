@@ -36,7 +36,7 @@ const closeBigPicture = () => {
 };
 
 const openBigPicture = (pictureId) => {
-  // Находим фото по ID (теперь работаем с реальными данными)
+  // Находим фото по ID
   const currentPhoto = photos.find((photo) => photo.id === Number(pictureId));
 
   if (!currentPhoto) {

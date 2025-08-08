@@ -6,10 +6,10 @@ let currentComments = [];
 
 const socialCommentsNode = document.querySelector('.social__comments');
 const socialCommentsTemplate = document.querySelector('.social__comment');
-const commentsCountNode = document.querySelector('.social__comment-count');
+const commentsShownCountNode = document.querySelector('.social__comment-shown-count');
+const commentsTotalCountNode = document.querySelector('.social__comment-total-count');
 const commentsLoaderNode = document.querySelector('.social__comments-loader');
 
-// Функция создания одного комментария
 const createComment = (comment) => {
   const commentElement = socialCommentsTemplate.cloneNode(true);
   commentElement.querySelector('.social__picture').src = comment.avatar;
@@ -18,40 +18,42 @@ const createComment = (comment) => {
   return commentElement;
 };
 
-// Рендер порции комментариев с использованием renderPack
 const renderCommentsPortion = () => {
   const portion = currentComments.slice(currentCount, currentCount + COUNT_STEP);
 
-  renderPack(
-    portion,
-    createComment,
-    socialCommentsNode
-  );
+  renderPack(portion, createComment, socialCommentsNode);
 
-  currentCount += portion.length;
+  currentCount = Math.min(currentCount + COUNT_STEP, currentComments.length);
 
-  // Обновляем счетчик
-  commentsCountNode.innerHTML = `${currentCount} из <span class="comments-count">${currentComments.length}</span>`;
+  // Обновляем счётчики
+  commentsShownCountNode.textContent = currentCount;
+  commentsTotalCountNode.textContent = currentComments.length;
 
   // Скрываем кнопку если все загружено
-  if (currentCount >= currentComments.length) {
-    commentsLoaderNode.classList.add('hidden');
-  }
+  commentsLoaderNode.classList.toggle('hidden', currentCount >= currentComments.length);
 };
 
-// Очистка комментариев
 const clearComments = () => {
   currentCount = 0;
   socialCommentsNode.innerHTML = '';
   commentsLoaderNode.classList.remove('hidden');
-  commentsLoaderNode.removeEventListener('click', renderCommentsPortion);
+  commentsShownCountNode.textContent = '0';
+  commentsTotalCountNode.textContent = '0';
 };
 
-// Инициализация комментариев
 const initComments = (comments) => {
+  // Удаляем старый обработчик, если был
+  commentsLoaderNode.removeEventListener('click', renderCommentsPortion);
+
   currentComments = comments;
   clearComments();
+
+  // Устанавливаем общее количество
+  commentsTotalCountNode.textContent = currentComments.length;
+
   renderCommentsPortion();
+
+  // Добавляем новый обработчик
   commentsLoaderNode.addEventListener('click', renderCommentsPortion);
 };
 
