@@ -45,7 +45,7 @@ const isHashtagsValid = (value) => {
     },
     {
       check: inputArray.some((item) => !/^#[a-zа-яё0-9]{1,19}$/i.test(item)),
-      error: 'Хештег содержит недопустимые символы',
+      error: 'Хештег содержит недопустимые символы (разрешены только буквы и цифры)',
     },
   ];
 
@@ -58,4 +58,4 @@ const isHashtagsValid = (value) => {
   });
 };
 
-export { error, isHashtagsValid };
+export { error, isHashtagsValid, errorMessage };

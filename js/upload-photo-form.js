@@ -1,9 +1,9 @@
 import { isEscapeKey } from './utils/escape.js';
-import { initEffectsSlider, resetEffects } from './effects-slider.js';
-import { isHashtagsValid } from './check-hashtag-validity.js';
+import { isHashtagsValid, errorMessage } from './check-hashtag-validity.js';
 import { uploadPhoto } from './api.js';
-import { showTostError } from './utils/error.js';
+import { showToastError } from './utils/error.js';
 
+const DEFAULT_SCALE = 1;
 const SCALE_STEP = 0.25;
 const FILE_TYPES = ['jpg', 'jpeg', 'png', 'webp',];
 const uploadForm = document.querySelector('.img-upload__form');
@@ -20,6 +20,7 @@ const scaleControl = uploadForm.querySelector('.scale__control--value');
 const submitButton = uploadForm.querySelector('.img-upload__submit');
 
 let scale = 1;
+let currentBlobUrl = null;
 
 const submitButtonText = {
   IDLE: 'Опубликовать',
@@ -37,9 +38,10 @@ const enableButton = (text) => {
 };
 
 const pristine = new Pristine(uploadForm, {
-  classTo: 'img-upload__form',
-  errorTextParent: 'img-upload__field-wrapper',
-  errorTextClass: 'img-upload__field-wrapper--error',
+  classTo: 'img-upload__field-wrapper', // Родительский элемент
+  errorTextParent: 'img-upload__field-wrapper', // Куда вставлять ошибку
+  errorTextClass: 'pristine-error', // Класс для текста ошибки
+  errorClass: 'img-upload__field-wrapper--error' // Класс для родителя
 });
 
 // Функции для работы с сообщениями
@@ -84,9 +86,34 @@ const showErrorMessage = () => showMessage('#error');
 // Сброс формы
 const resetForm = () => {
   uploadForm.reset();
-  scale = 1;
-  scaleControl.value = '100%';
-  img.style.transform = 'scale(1)';
+  pristine.reset();
+
+  // Сбрасываем масштаб
+  scale = DEFAULT_SCALE;
+  scaleControl.value = `${DEFAULT_SCALE * 100}%`;
+  img.style.transform = `scale(${DEFAULT_SCALE})`;
+
+  // Сбрасываем эффекты
+  img.style.filter = 'none';
+  img.className = '';
+  const effectNoneInput = uploadForm.querySelector('#effect-none');
+  if (effectNoneInput) {
+    effectNoneInput.checked = true;
+  }
+
+  // Сбрасываем слайдер
+  const effectLevelSlider = uploadForm.querySelector('.effect-level__slider');
+  const effectLevelValue = uploadForm.querySelector('.effect-level__value');
+  const sliderContainer = uploadForm.querySelector('.img-upload__effect-level');
+
+  if (effectLevelSlider) {
+    effectLevelSlider.noUiSlider.reset();
+    sliderContainer.style.display = 'none';
+  }
+
+  if (effectLevelValue) {
+    effectLevelValue.value = '';
+  }
 
   // Сбрасываем изображение предпросмотра
   const previewImg = uploadForm.querySelector('.img-upload__preview img');
@@ -98,16 +125,23 @@ const resetForm = () => {
     preview.style.backgroundImage = '';
   });
 
-  resetEffects();
+  // Очищаем поле загрузки файла
   uploadFileControl.value = '';
+
+  // Освобождаем Blob URL если был
+  if (currentBlobUrl) {
+    URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = null;
+  }
+
+  // Сбрасываем состояние кнопки
+  enableButton(submitButtonText.IDLE);
 };
 
-// Закрытие формы
 const closeUploadModal = () => {
   photoEditorForm.classList.add('hidden');
   pageBody.classList.remove('modal-open');
   document.removeEventListener('keydown', onDocumentKeydown);
-  photoEditorResetBtn.removeEventListener('click', onPhotoEditorResetBtnClick);
   resetForm();
 };
 
@@ -116,11 +150,23 @@ const onPhotoEditorResetBtnClick = () => closeUploadModal();
 const onDocumentKeydown = (evt) => {
   if (isEscapeKey(evt)) {
     evt.preventDefault();
+
+    // Проверка активных полей ввода
     if (document.activeElement === hashtagInput || document.activeElement === commentInput) {
       evt.stopPropagation();
-    } else {
-      closeUploadModal();
+      return;
     }
+
+    // Проверяем, есть ли открытое сообщение об ошибке
+    const errorElement = document.querySelector('.error');
+    if (errorElement && !errorElement.classList.contains('hidden')) {
+      // Закрываем только сообщение об ошибке
+      errorElement.remove();
+      return; // Прерываем выполнение, чтобы не закрывать форму
+    }
+
+    // Закрытие формы по умолчанию
+    closeUploadModal();
   }
 };
 
@@ -168,6 +214,11 @@ const onFormSubmit = (evt) => {
 };
 
 export const initUploadModal = () => {
+// Принудительно активируем поле при инициализации
+  hashtagInput.disabled = false;
+  hashtagInput.readOnly = false;
+  hashtagInput.removeAttribute('disabled');
+
   uploadFileControl.addEventListener('change', () => {
     const file = uploadFileControl.files[0];
 
@@ -175,47 +226,52 @@ export const initUploadModal = () => {
       return;
     }
 
-    // Проверяем тип файла по расширению
     const fileName = file.name.toLowerCase();
     const fileExt = fileName.split('.').pop();
     const matches = FILE_TYPES.includes(fileExt);
 
     if (!matches) {
-      showTostError('Неверный тип файла');
+      showToastError('Неверный тип файла');
       return;
     }
 
     const previewImg = uploadForm.querySelector('.img-upload__preview img');
     const effectsPreviews = uploadForm.querySelectorAll('.effects__preview');
 
-    const reader = new FileReader();
+    // Освобождаем предыдущий Blob URL
+    if (currentBlobUrl) {
+      URL.revokeObjectURL(currentBlobUrl);
+    }
 
-    reader.addEventListener('load', () => {
-      // Устанавливаем загруженное изображение в src основного превью
-      previewImg.src = reader.result;
+    // Создаём новый Blob URL
+    currentBlobUrl = URL.createObjectURL(file); // Можно использовать file напрямую
 
-      // Устанавливаем изображение для всех миниатюр эффектов
-      effectsPreviews.forEach((preview) => {
-        preview.style.backgroundImage = `url(${reader.result})`;
-      });
+    previewImg.src = currentBlobUrl;
 
-      // Показываем форму редактирования
-      photoEditorForm.classList.remove('hidden');
-      pageBody.classList.add('modal-open');
-
-      // Инициализируем остальные компоненты
-      photoEditorResetBtn.addEventListener('click', onPhotoEditorResetBtnClick);
-      document.addEventListener('keydown', onDocumentKeydown);
-      initEffectsSlider();
+    effectsPreviews.forEach((preview) => {
+      preview.style.backgroundImage = `url(${currentBlobUrl})`;
     });
 
-    reader.readAsDataURL(file);
+    // Показываем форму редактирования
+    photoEditorForm.classList.remove('hidden');
+    pageBody.classList.add('modal-open');
+
+    // Разблокируем поле
+    hashtagInput.disabled = false;
+    hashtagInput.readOnly = false;
+
+    // Сбрасываем валидацию
+    pristine.reset();
+
+    // Добавляем обработчики
+    photoEditorResetBtn.addEventListener('click', onPhotoEditorResetBtnClick);
+    document.addEventListener('keydown', onDocumentKeydown);
   });
 
   smaller.addEventListener('click', onSmallerClick);
   bigger.addEventListener('click', onBiggerClick);
   uploadForm.addEventListener('submit', onFormSubmit);
 
-  pristine.addValidator(hashtagInput, isHashtagsValid, 'Некорректный хэштег', 2, false);
+  pristine.addValidator(hashtagInput, isHashtagsValid, () => errorMessage, 2, true);
   pristine.addValidator(commentInput, validateComment, 'Длина комментария больше 140 символов');
 };
