@@ -27,13 +27,13 @@ const onEscKeydown = (evt) => {
   }
 };
 
-const closeBigPicture = () => {
+function closeBigPicture() {
   bigPictureNode.classList.add('hidden');
   document.body.classList.remove('modal-open');
   bigPictureCancelNode.removeEventListener('click', onBigPictureCancelClick);
   document.removeEventListener('keydown', onEscKeydown);
   clearComments();
-};
+}
 
 const openBigPicture = (pictureId) => {
   // Находим фото по ID

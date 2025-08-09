@@ -1,5 +1,5 @@
 import { isEscapeKey } from './utils/escape.js';
-import { isHashtagsValid, errorMessage } from './check-hashtag-validity.js';
+import { checkHashtagsValidity, errorMessage } from './check-hashtag-validity.js';
 import { uploadPhoto } from './api.js';
 import { showToastError } from './utils/error.js';
 
@@ -7,16 +7,16 @@ const DEFAULT_SCALE = 1;
 const SCALE_STEP = 0.25;
 const FILE_TYPES = ['jpg', 'jpeg', 'png', 'webp',];
 const uploadForm = document.querySelector('.img-upload__form');
-const pageBody = document.querySelector('body');
-const uploadFileControl = uploadForm.querySelector('#upload-file');
+const bodyElement = document.querySelector('body');
+const uploadFileInput = uploadForm.querySelector('#upload-file');
 const photoEditorForm = uploadForm.querySelector('.img-upload__overlay');
-const photoEditorResetBtn = photoEditorForm.querySelector('#upload-cancel');
+const photoEditorResetButton = photoEditorForm.querySelector('#upload-cancel');
 const hashtagInput = uploadForm.querySelector('.text__hashtags');
 const commentInput = uploadForm.querySelector('.text__description');
-const smaller = uploadForm.querySelector('.scale__control--smaller');
-const bigger = uploadForm.querySelector('.scale__control--bigger');
-const img = uploadForm.querySelector('.img-upload__preview img');
-const scaleControl = uploadForm.querySelector('.scale__control--value');
+const scaleSmallerButton = uploadForm.querySelector('.scale__control--smaller');
+const scaleBiggerButton = uploadForm.querySelector('.scale__control--bigger');
+const previewImage = uploadForm.querySelector('.img-upload__preview img');
+const scaleControlInput = uploadForm.querySelector('.scale__control--value');
 const submitButton = uploadForm.querySelector('.img-upload__submit');
 
 let scale = 1;
@@ -61,18 +61,18 @@ const showMessage = (templateId, closeCallback) => {
     }
   };
 
-  const onEscKeyDown = (evt) => {
+  function onEscKeyDown(evt) {
     if (isEscapeKey(evt)) {
       closeModal();
     }
-  };
+  }
 
-  const onClickOutside = (evt) => {
+  function onClickOutside(evt) {
     const innerClass = templateId === '#success' ? '.success__inner' : '.error__inner';
     if (!evt.target.closest(innerClass)) {
       closeModal();
     }
-  };
+  }
 
   const button = modal.querySelector(templateId === '#success' ? '.success__button' : '.error__button');
   button.addEventListener('click', closeModal);
@@ -90,12 +90,12 @@ const resetForm = () => {
 
   // Сбрасываем масштаб
   scale = DEFAULT_SCALE;
-  scaleControl.value = `${DEFAULT_SCALE * 100}%`;
-  img.style.transform = `scale(${DEFAULT_SCALE})`;
+  scaleControlInput.value = `${DEFAULT_SCALE * 100}%`;
+  previewImage.style.transform = `scale(${DEFAULT_SCALE})`;
 
   // Сбрасываем эффекты
-  img.style.filter = 'none';
-  img.className = '';
+  previewImage.style.filter = 'none';
+  previewImage.className = '';
   const effectNoneInput = uploadForm.querySelector('#effect-none');
   if (effectNoneInput) {
     effectNoneInput.checked = true;
@@ -126,7 +126,7 @@ const resetForm = () => {
   });
 
   // Очищаем поле загрузки файла
-  uploadFileControl.value = '';
+  uploadFileInput.value = '';
 
   // Освобождаем Blob URL если был
   if (currentBlobUrl) {
@@ -140,14 +140,14 @@ const resetForm = () => {
 
 const closeUploadModal = () => {
   photoEditorForm.classList.add('hidden');
-  pageBody.classList.remove('modal-open');
+  bodyElement.classList.remove('modal-open');
   document.removeEventListener('keydown', onDocumentKeydown);
   resetForm();
 };
 
-const onPhotoEditorResetBtnClick = () => closeUploadModal();
+const onphotoEditorResetButtonClick = () => closeUploadModal();
 
-const onDocumentKeydown = (evt) => {
+function onDocumentKeydown(evt) {
   if (isEscapeKey(evt)) {
     evt.preventDefault();
 
@@ -168,22 +168,22 @@ const onDocumentKeydown = (evt) => {
     // Закрытие формы по умолчанию
     closeUploadModal();
   }
-};
+}
 
 // Масштабирование
 const onSmallerClick = () => {
   if (scale > SCALE_STEP) {
     scale -= SCALE_STEP;
-    img.style.transform = `scale(${scale})`;
-    scaleControl.value = `${scale * 100}%`;
+    previewImage.style.transform = `scale(${scale})`;
+    scaleControlInput.value = `${scale * 100}%`;
   }
 };
 
 const onBiggerClick = () => {
   if (scale < 1) {
     scale += SCALE_STEP;
-    img.style.transform = `scale(${scale})`;
-    scaleControl.value = `${scale * 100}%`;
+    previewImage.style.transform = `scale(${scale})`;
+    scaleControlInput.value = `${scale * 100}%`;
   }
 };
 
@@ -219,8 +219,8 @@ export const initUploadModal = () => {
   hashtagInput.readOnly = false;
   hashtagInput.removeAttribute('disabled');
 
-  uploadFileControl.addEventListener('change', () => {
-    const file = uploadFileControl.files[0];
+  uploadFileInput.addEventListener('change', () => {
+    const file = uploadFileInput.files[0];
 
     if (!file) {
       return;
@@ -254,7 +254,7 @@ export const initUploadModal = () => {
 
     // Показываем форму редактирования
     photoEditorForm.classList.remove('hidden');
-    pageBody.classList.add('modal-open');
+    bodyElement.classList.add('modal-open');
 
     // Разблокируем поле
     hashtagInput.disabled = false;
@@ -264,14 +264,14 @@ export const initUploadModal = () => {
     pristine.reset();
 
     // Добавляем обработчики
-    photoEditorResetBtn.addEventListener('click', onPhotoEditorResetBtnClick);
+    photoEditorResetButton.addEventListener('click', onphotoEditorResetButtonClick);
     document.addEventListener('keydown', onDocumentKeydown);
   });
 
-  smaller.addEventListener('click', onSmallerClick);
-  bigger.addEventListener('click', onBiggerClick);
+  scaleSmallerButton.addEventListener('click', onSmallerClick);
+  scaleBiggerButton.addEventListener('click', onBiggerClick);
   uploadForm.addEventListener('submit', onFormSubmit);
 
-  pristine.addValidator(hashtagInput, isHashtagsValid, () => errorMessage, 2, true);
+  pristine.addValidator(hashtagInput, checkHashtagsValidity, () => errorMessage, 2, true);
   pristine.addValidator(commentInput, validateComment, 'Длина комментария больше 140 символов');
 };

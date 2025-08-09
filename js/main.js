@@ -1,4 +1,4 @@
-import { container, initThumbnails } from './thumbnails.js';
+import { picturesContainer, initThumbnails } from './thumbnails.js';
 import { openBigPicture } from './render-photo.js';
 import { initUploadModal } from './upload-photo-form.js';
 import { configFilter } from './filter.js';
@@ -13,7 +13,7 @@ const initApp = () => {
     .then((photos) => {
       configFilter(photos);
 
-      container.addEventListener('click', (evt) => {
+      picturesContainer.addEventListener('click', (evt) => {
         const currentPictureNode = evt.target.closest('.picture');
         if (currentPictureNode) {
           evt.preventDefault();

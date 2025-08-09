@@ -1,13 +1,11 @@
-import { numDecline } from './utils/num-decline.js';
+import { declineNumber } from './utils/num-decline.js';
 
 const MAX_HASHTAGS = 5;
 const MAX_SYMBOLS = 20;
 
 let errorMessage = '';
 
-const error = () => errorMessage;
-
-const isHashtagsValid = (value) => {
+const checkHashtagsValidity = (value) => {
   errorMessage = '';
 
   const inputText = value.toLowerCase().trim();
@@ -41,7 +39,7 @@ const isHashtagsValid = (value) => {
     },
     {
       check: inputArray.length > MAX_HASHTAGS,
-      error: `Нельзя указать больше ${MAX_HASHTAGS} ${numDecline(MAX_HASHTAGS, 'хештега', 'хештегов', 'хештегов')}`,
+      error: `Нельзя указать больше ${MAX_HASHTAGS} ${declineNumber(MAX_HASHTAGS, 'хештега', 'хештегов', 'хештегов')}`,
     },
     {
       check: inputArray.some((item) => !/^#[a-zа-яё0-9]{1,19}$/i.test(item)),
@@ -58,4 +56,4 @@ const isHashtagsValid = (value) => {
   });
 };
 
-export { error, isHashtagsValid, errorMessage };
+export { checkHashtagsValidity, errorMessage };
