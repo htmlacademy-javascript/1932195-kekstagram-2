@@ -60,7 +60,7 @@ export const init = () => {
   if (defaultEffect) {
     defaultEffect.checked = true;
     sliderElement.setAttribute('disabled', true);
-    document.querySelector('.img-upload__effect-level').style.display = 'none';
+    effectWrapper.style.display = 'none';
     uploadImage.style.filter = '';
   }
 };
@@ -71,10 +71,10 @@ const initEffectRadios = () => {
       const selectedEffect = evt.target.value;
       if (selectedEffect === 'none') {
         sliderElement.setAttribute('disabled', true);
-        document.querySelector('.img-upload__effect-level').style.display = 'none';
+        effectWrapper.style.display = 'none';
         uploadImage.style.filter = '';
       } else {
-        document.querySelector('.img-upload__effect-level').style.display = '';
+        effectWrapper.style.display = '';
         sliderElement.removeAttribute('disabled');
         updateImageEffect();
         if (selectedEffect === 'chrome' || selectedEffect === 'sepia') {

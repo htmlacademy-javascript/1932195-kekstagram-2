@@ -2,38 +2,38 @@ import { findTemplate, renderPack } from './utils/dom.js';
 import { setPhotos } from './render-photo.js';
 import { loadPhotos } from './api.js';
 
-const template = findTemplate('picture');
-const container = document.querySelector('.pictures');
+const pictureTemplateElement = findTemplate('picture');
+const picturesContainerElement = document.querySelector('.pictures');
 
 const clearThumbnails = () => {
-  const elementsToKeep = [
-    container.querySelector('.img-upload'),
-    container.querySelector('.pictures__title')
+  const elements = [
+    picturesContainerElement.querySelector('.img-upload'),
+    picturesContainerElement.querySelector('.pictures__title')
   ].filter(Boolean);
 
-  container.innerHTML = '';
-  elementsToKeep.forEach((element) => container.appendChild(element));
+  picturesContainerElement.innerHTML = '';
+  elements.forEach((element) => picturesContainerElement.appendChild(element));
 };
 
-const createThumbnail = (photo) => {
-  const thumbnail = template.cloneNode(true);
-  thumbnail.href = `#${photo.id}`;
-  thumbnail.dataset.pictureId = photo.id;
+const createThumbnailElement = (photo) => {
+  const thumbnailElement = pictureTemplateElement.cloneNode(true);
+  thumbnailElement.href = `#${photo.id}`;
+  thumbnailElement.dataset.pictureId = photo.id;
 
-  const image = thumbnail.querySelector('.picture__img');
+  const image = thumbnailElement.querySelector('.picture__img');
   image.src = photo.url;
   image.alt = photo.description;
 
-  thumbnail.querySelector('.picture__comments').textContent = photo.comments.length;
-  thumbnail.querySelector('.picture__likes').textContent = photo.likes;
+  thumbnailElement.querySelector('.picture__comments').textContent = photo.comments.length;
+  thumbnailElement.querySelector('.picture__likes').textContent = photo.likes;
 
-  return thumbnail;
+  return thumbnailElement;
 };
 
 const renderThumbnails = (photos) => {
   clearThumbnails();
   setPhotos(photos);
-  renderPack(photos, createThumbnail, container);
+  renderPack(photos, createThumbnailElement, picturesContainerElement);
 };
 
 const initThumbnails = async () => {
@@ -42,4 +42,4 @@ const initThumbnails = async () => {
   return photos;
 };
 
-export { initThumbnails, renderThumbnails, clearThumbnails, container };
+export { initThumbnails, renderThumbnails, clearThumbnails, picturesContainerElement as picturesContainer };
