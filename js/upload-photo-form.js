@@ -2,10 +2,9 @@ import { isEscapeKey } from './utils/escape.js';
 import { checkHashtagsValidity, errorMessage } from './check-hashtag-validity.js';
 import { uploadPhoto } from './api.js';
 import { showToastError } from './utils/error.js';
+import { initPhotoScale } from './photo-scale.js';
 
-const DEFAULT_SCALE = 1;
-const SCALE_STEP = 0.25;
-const FILE_TYPES = ['jpg', 'jpeg', 'png', 'webp',];
+const FILE_TYPES = ['jpg', 'jpeg', 'png', 'webp'];
 const uploadForm = document.querySelector('.img-upload__form');
 const bodyElement = document.querySelector('body');
 const uploadFileInput = uploadForm.querySelector('#upload-file');
@@ -13,14 +12,14 @@ const photoEditorForm = uploadForm.querySelector('.img-upload__overlay');
 const photoEditorResetButton = photoEditorForm.querySelector('#upload-cancel');
 const hashtagInput = uploadForm.querySelector('.text__hashtags');
 const commentInput = uploadForm.querySelector('.text__description');
+const previewImage = uploadForm.querySelector('.img-upload__preview img');
+const submitButton = uploadForm.querySelector('.img-upload__submit');
+const scaleControlInput = uploadForm.querySelector('.scale__control--value');
 const scaleSmallerButton = uploadForm.querySelector('.scale__control--smaller');
 const scaleBiggerButton = uploadForm.querySelector('.scale__control--bigger');
-const previewImage = uploadForm.querySelector('.img-upload__preview img');
-const scaleControlInput = uploadForm.querySelector('.scale__control--value');
-const submitButton = uploadForm.querySelector('.img-upload__submit');
 
-let scale = 1;
 let currentBlobUrl = null;
+let scaleController;
 
 const submitButtonText = {
   IDLE: 'Опубликовать',
@@ -38,13 +37,12 @@ const enableButton = (text) => {
 };
 
 const pristine = new Pristine(uploadForm, {
-  classTo: 'img-upload__field-wrapper', // Родительский элемент
-  errorTextParent: 'img-upload__field-wrapper', // Куда вставлять ошибку
-  errorTextClass: 'pristine-error', // Класс для текста ошибки
-  errorClass: 'img-upload__field-wrapper--error' // Класс для родителя
+  classTo: 'img-upload__field-wrapper',
+  errorTextParent: 'img-upload__field-wrapper',
+  errorTextClass: 'pristine-error',
+  errorClass: 'img-upload__field-wrapper--error'
 });
 
-// Функции для работы с сообщениями
 const showMessage = (templateId, closeCallback) => {
   const template = document.querySelector(templateId);
   const message = template.content.cloneNode(true);
@@ -83,17 +81,12 @@ const showMessage = (templateId, closeCallback) => {
 const showSuccessMessage = () => showMessage('#success');
 const showErrorMessage = () => showMessage('#error');
 
-// Сброс формы
 const resetForm = () => {
   uploadForm.reset();
   pristine.reset();
 
-  // Сбрасываем масштаб
-  scale = DEFAULT_SCALE;
-  scaleControlInput.value = `${DEFAULT_SCALE * 100}%`;
-  previewImage.style.transform = `scale(${DEFAULT_SCALE})`;
+  scaleController.resetScale();
 
-  // Сбрасываем эффекты
   previewImage.style.filter = 'none';
   previewImage.className = '';
   const effectNoneInput = uploadForm.querySelector('#effect-none');
@@ -101,7 +94,6 @@ const resetForm = () => {
     effectNoneInput.checked = true;
   }
 
-  // Сбрасываем слайдер
   const effectLevelSlider = uploadForm.querySelector('.effect-level__slider');
   const effectLevelValue = uploadForm.querySelector('.effect-level__value');
   const sliderContainer = uploadForm.querySelector('.img-upload__effect-level');
@@ -115,26 +107,20 @@ const resetForm = () => {
     effectLevelValue.value = '';
   }
 
-  // Сбрасываем изображение предпросмотра
-  const previewImg = uploadForm.querySelector('.img-upload__preview img');
-  previewImg.src = 'img/upload-default-image.jpg';
+  previewImage.src = 'img/upload-default-image.jpg';
 
-  // Сбрасываем миниатюры эффектов
   const effectsPreviews = uploadForm.querySelectorAll('.effects__preview');
   effectsPreviews.forEach((preview) => {
     preview.style.backgroundImage = '';
   });
 
-  // Очищаем поле загрузки файла
   uploadFileInput.value = '';
 
-  // Освобождаем Blob URL если был
   if (currentBlobUrl) {
     URL.revokeObjectURL(currentBlobUrl);
     currentBlobUrl = null;
   }
 
-  // Сбрасываем состояние кнопки
   enableButton(submitButtonText.IDLE);
 };
 
@@ -145,52 +131,29 @@ const closeUploadModal = () => {
   resetForm();
 };
 
-const onphotoEditorResetButtonClick = () => closeUploadModal();
+const onPhotoEditorResetButtonClick = () => closeUploadModal();
 
 function onDocumentKeydown(evt) {
   if (isEscapeKey(evt)) {
     evt.preventDefault();
 
-    // Проверка активных полей ввода
     if (document.activeElement === hashtagInput || document.activeElement === commentInput) {
       evt.stopPropagation();
       return;
     }
 
-    // Проверяем, есть ли открытое сообщение об ошибке
     const errorElement = document.querySelector('.error');
     if (errorElement && !errorElement.classList.contains('hidden')) {
-      // Закрываем только сообщение об ошибке
       errorElement.remove();
-      return; // Прерываем выполнение, чтобы не закрывать форму
+      return;
     }
 
-    // Закрытие формы по умолчанию
     closeUploadModal();
   }
 }
 
-// Масштабирование
-const onSmallerClick = () => {
-  if (scale > SCALE_STEP) {
-    scale -= SCALE_STEP;
-    previewImage.style.transform = `scale(${scale})`;
-    scaleControlInput.value = `${scale * 100}%`;
-  }
-};
-
-const onBiggerClick = () => {
-  if (scale < 1) {
-    scale += SCALE_STEP;
-    previewImage.style.transform = `scale(${scale})`;
-    scaleControlInput.value = `${scale * 100}%`;
-  }
-};
-
-// Валидация
 const validateComment = (value) => value.length <= 140;
 
-// Отправка формы
 const onFormSubmit = (evt) => {
   evt.preventDefault();
 
@@ -213,11 +176,17 @@ const onFormSubmit = (evt) => {
   }
 };
 
-export const initUploadModal = () => {
-// Принудительно активируем поле при инициализации
+const initUploadModal = () => {
   hashtagInput.disabled = false;
   hashtagInput.readOnly = false;
   hashtagInput.removeAttribute('disabled');
+
+  scaleController = initPhotoScale({
+    scaleControlInput,
+    previewImage,
+    scaleSmallerButton,
+    scaleBiggerButton
+  });
 
   uploadFileInput.addEventListener('change', () => {
     const file = uploadFileInput.files[0];
@@ -238,40 +207,31 @@ export const initUploadModal = () => {
     const previewImg = uploadForm.querySelector('.img-upload__preview img');
     const effectsPreviews = uploadForm.querySelectorAll('.effects__preview');
 
-    // Освобождаем предыдущий Blob URL
     if (currentBlobUrl) {
       URL.revokeObjectURL(currentBlobUrl);
     }
 
-    // Создаём новый Blob URL
-    currentBlobUrl = URL.createObjectURL(file); // Можно использовать file напрямую
-
+    currentBlobUrl = URL.createObjectURL(file);
     previewImg.src = currentBlobUrl;
 
     effectsPreviews.forEach((preview) => {
       preview.style.backgroundImage = `url(${currentBlobUrl})`;
     });
 
-    // Показываем форму редактирования
     photoEditorForm.classList.remove('hidden');
     bodyElement.classList.add('modal-open');
-
-    // Разблокируем поле
     hashtagInput.disabled = false;
     hashtagInput.readOnly = false;
-
-    // Сбрасываем валидацию
     pristine.reset();
 
-    // Добавляем обработчики
-    photoEditorResetButton.addEventListener('click', onphotoEditorResetButtonClick);
+    photoEditorResetButton.addEventListener('click', onPhotoEditorResetButtonClick);
     document.addEventListener('keydown', onDocumentKeydown);
   });
 
-  scaleSmallerButton.addEventListener('click', onSmallerClick);
-  scaleBiggerButton.addEventListener('click', onBiggerClick);
   uploadForm.addEventListener('submit', onFormSubmit);
 
   pristine.addValidator(hashtagInput, checkHashtagsValidity, () => errorMessage, 2, true);
   pristine.addValidator(commentInput, validateComment, 'Длина комментария больше 140 символов');
 };
+
+export { initUploadModal };

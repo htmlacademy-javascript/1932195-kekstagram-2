@@ -6,7 +6,7 @@
  * @param {string} genitivePlural - Родительный падеж множественного числа (5 хештегов)
  * @returns {string} - Правильная форма слова
  */
-export const declineNumber = (num, nominative, genitiveSingular, genitivePlural) => {
+const declineNumber = (num, nominative, genitiveSingular, genitivePlural) => {
   // Для чисел, оканчивающихся на 0 или от 5 до 20, используем множественное число
   if (num % 10 === 0 || (num % 100 >= 5 && num % 100 <= 20)) {
     return genitivePlural;
@@ -25,3 +25,5 @@ export const declineNumber = (num, nominative, genitiveSingular, genitivePlural)
   // Во всех остальных случаях - множественное число
   return genitivePlural;
 };
+
+export { declineNumber };

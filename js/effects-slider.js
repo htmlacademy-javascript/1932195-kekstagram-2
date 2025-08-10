@@ -2,7 +2,6 @@ const effectRadios = document.querySelectorAll('input[name="effect"]');
 const sliderElement = document.querySelector('.effect-level__slider');
 const effectLevel = document.querySelector('.effect-level__value');
 const uploadImage = document.querySelector('.img-upload__preview img');
-const previewImage = document.querySelector('.img-upload__preview img');
 const effectWrapper = document.querySelector('.img-upload__effect-level');
 
 noUiSlider.create(sliderElement, {
@@ -17,8 +16,6 @@ const updateImageEffect = () => {
   const effect = document.querySelector('input[name="effect"]:checked').value;
   uploadImage.style.filter = '';
   switch (effect) {
-    case 'none':
-      break;
     case 'chrome':
       uploadImage.style.filter = `grayscale(${level})`;
       break;
@@ -37,25 +34,7 @@ const updateImageEffect = () => {
   }
 };
 
-export const resetEffects = () => {
-  const noneEffectRadio = document.querySelector('input[value="none"]');
-  if (noneEffectRadio) {
-    noneEffectRadio.checked = true;
-  }
-
-  previewImage.style.filter = '';
-  effectLevel.value = '';
-  effectWrapper.style.display = 'none';
-  sliderElement.setAttribute('disabled', true);
-  sliderElement.noUiSlider.updateOptions({
-    range: { min: 0, max: 100 },
-    start: 100,
-    step: 1
-  });
-  sliderElement.noUiSlider.set(100);
-};
-
-export const init = () => {
+const init = () => {
   const defaultEffect = document.querySelector('input[value="none"]');
   if (defaultEffect) {
     defaultEffect.checked = true;
@@ -117,4 +96,5 @@ sliderElement.noUiSlider.on('update', () => {
 });
 
 init();
-export {initEffectRadios};
+
+export { initEffectRadios };
